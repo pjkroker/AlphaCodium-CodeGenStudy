@@ -60,10 +60,10 @@ class AiHandler:
             if "ollama" in get_settings().get("config.model").lower():
                 litellm.set_verbose = True
                 # Ollama runs on localhost:11434;
-                litellm.api_base = os.getenv("LITELLM_API_BASE", "http://host.docker.internal:11434")
+                litellm.api_base = get_settings().get("config.LITELLM_API_BASE")
                 # Ollama doesn’t require auth, but LiteLLM wants a non-empty key string
                 litellm.api_key = os.getenv("LITELLM_API_KEY", "ollama")
-                model = os.getenv("MODEL", "ollama/llama2:latest")
+                model = get_settings().get("config.model")
             # --- vLLM ---
             if "vllm" in get_settings().get("config.model").lower():
                 # vLLM exposes an OpenAI-compatible API
@@ -131,7 +131,7 @@ class AiHandler:
                 #Editetd
                 if "ollama" in get_settings().get("config.model"):
                     litellm.set_verbose = True
-                    model = os.getenv("MODEL", "ollama/qwen2.5-coder:7b")
+                    #model = os.getenv("MODEL", "ollama/qwen2.5-coder:7b")
                     response = await acompletion(
                         model=model,
                         messages=[
