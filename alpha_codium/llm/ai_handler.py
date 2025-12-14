@@ -64,14 +64,15 @@ class AiHandler:
                 # Ollama doesn’t require auth, but LiteLLM wants a non-empty key string
                 litellm.api_key = os.getenv("LITELLM_API_KEY", "ollama")
                 model = get_settings().get("config.model")
-            # --- vLLM ---
-            if "vllm" in get_settings().get("config.model").lower():
+            # --- vLLM with openai compatible endpoint ---
+            if "openai" in get_settings().get("config.model").lower():
                 # vLLM exposes an OpenAI-compatible API
                 litellm.set_verbose = True
-                litellm.api_base = os.getenv("LITELLM_API_BASE", "http://host.docker.internal:8010/v1")
+                api_base = get_settings().get("config.LITELLM_API_BASE")
+                litellm.api_base = api_base
                 litellm.api_key = os.getenv("VLLM_API_KEY", "dummy")  # vLLM requires non-empty key
-                model = os.getenv("MODEL", "openai/deepseek-ai/deepseek-coder-33b-instruct")
-                print(sorted(litellm.provider_list))
+                model = get_settings().get("config.model")
+                #print(sorted(litellm.provider_list))
         except AttributeError as e:
             raise ValueError("OpenAI key is required") from e
 
@@ -144,22 +145,16 @@ class AiHandler:
                         force_timeout=get_settings().config.ai_timeout,
                         stream=False,
                     )
-                # --- vLLM ---
-                elif "vllm" in get_settings().get("config.model").lower():
+                # --- vLLM with openai compatible endpoint ---
+                elif "openai" in get_settings().get("config.model").lower():
                     litellm.set_verbose = True
-
-                    model = os.getenv(
-                        "MODEL",
-                        "openai/deepseek-ai/deepseek-coder-33b-instruct"
-                    )
-
                     response = await acompletion(
                         model=model,
                         messages=[
                             {"role": "system", "content": system},
                             {"role": "user", "content": user},
                         ],
-                        api_base="http://host.docker.internal:8010/v1",
+                        api_base=get_settings().get("config.LITELLM_API_BASE"),
                         temperature=temperature,
                         repetition_penalty=frequency_penalty + 1,
                         max_tokens=2000,

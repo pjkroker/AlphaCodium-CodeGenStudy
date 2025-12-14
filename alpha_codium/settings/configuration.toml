@@ -2,10 +2,16 @@
 #model = "gpt-4o-mini-2024-07-18"
 #model = "https://api-inference.huggingface.co/v1/huggingface/deepseek-ai/deepseek-coder-33b-instruct"
 #model = "hosted_vllm/deepseek-ai/deepseek-coder-7b-instruct"
-model = "ollama/llama3.3:70b"
-#LITELLM_API_BASE = "http://host.docker.internal:8000"
+
+#model = "ollama/llama3.3:70b"
+#LITELLM_API_BASE = "http://localhost:11434/api/generate"
 #LITELLM_API_BASE = "http://host.docker.internal:11434/api/generate"
-LITELLM_API_BASE = "http://localhost:11434/api/generate"
+
+model = "openai/deepseek-ai/deepseek-coder-33b-instruct"
+LITELLM_API_BASE = "http://localhost:8010/v1"
+#LITELLM_API_BASE = "http://host.docker.internal:8010/v1"
+
+
 #LITELLM_API_BASE = "https://api-inference.huggingface.co/v1"
 # model="gpt-4-0125-preview"
 # model="gpt-4o-2024-05-13"
