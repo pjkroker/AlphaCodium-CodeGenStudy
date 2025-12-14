@@ -12,9 +12,14 @@ from retry import retry
 
 from alpha_codium.settings.config_loader import get_settings
 from alpha_codium.log import get_logger
+#from alpha_codium.llm.acompletion_compat import acompletion_compat as acompletion
+
+import asyncio
 
 logger = get_logger(__name__)
 OPENAI_RETRIES = 5
+
+#Edited to also support the Ollama Platfrom TODO check Spelling
 
 
 class AiHandler:
@@ -35,21 +40,38 @@ class AiHandler:
                 openai.api_key = get_settings().openai.key
                 litellm.openai_key = get_settings().openai.key
             self.azure = False
-            if "deepseek" in get_settings().get("config.model"):
-                litellm.register_prompt_template(
-                    model="huggingface/deepseek-ai/deepseek-coder-33b-instruct",
-                    roles={
-                        "system": {
-                            "pre_message": "",
-                            "post_message": "\n"
-                        },
-                        "user": {
-                            "pre_message": "### Instruction:\n",
-                            "post_message": "\n### Response:\n"
-                        },
-                    },
-
-                )
+            # if "deepseek" in get_settings().get("config.model"):
+            #     litellm.api_key = os.getenv("LITELLM_API_KEY", "ollama")
+            #     litellm.register_prompt_template(
+            #         model="openai/deepseek-ai/deepseek-coder-33b-instruct",
+            #         roles={
+            #             "system": {
+            #                 "pre_message": "",
+            #                 "post_message": "\n"
+            #             },
+            #             "user": {
+            #                 "pre_message": "### Instruction:\n",
+            #                 "post_message": "\n### Response:\n"
+            #             },
+            #         },
+            #
+            #     )
+            #Edited
+            if "ollama" in get_settings().get("config.model").lower():
+                litellm.set_verbose = True
+                # Ollama runs on localhost:11434;
+                litellm.api_base = os.getenv("LITELLM_API_BASE", "http://host.docker.internal:11434")
+                # Ollama doesn’t require auth, but LiteLLM wants a non-empty key string
+                litellm.api_key = os.getenv("LITELLM_API_KEY", "ollama")
+                model = os.getenv("MODEL", "ollama/llama2:latest")
+            # --- vLLM ---
+            if "vllm" in get_settings().get("config.model").lower():
+                # vLLM exposes an OpenAI-compatible API
+                litellm.set_verbose = True
+                litellm.api_base = os.getenv("LITELLM_API_BASE", "http://host.docker.internal:8010/v1")
+                litellm.api_key = os.getenv("VLLM_API_KEY", "dummy")  # vLLM requires non-empty key
+                model = os.getenv("MODEL", "openai/deepseek-ai/deepseek-coder-33b-instruct")
+                print(sorted(litellm.provider_list))
         except AttributeError as e:
             raise ValueError("OpenAI key is required") from e
 
@@ -87,23 +109,71 @@ class AiHandler:
                 logger.info("Running inference ...")
                 logger.debug(f"system:\n{system}")
                 logger.debug(f"user:\n{user}")
-                if "deepseek" in get_settings().get("config.model"):
+                # if "deepseek" in get_settings().get("config.model"):
+                #     response = await acompletion(
+                #         model="openai/deepseek-ai/deepseek-coder-33b-instruct",
+                #         messages=[
+                #             {"role": "system", "content": system},
+                #             {"role": "user", "content": user},
+                #         ],
+                #         #api_base=get_settings().get("config.model"),
+                #         api_base="http://host.docker.internal:8010/v1",
+                #         temperature=temperature,
+                #         repetition_penalty=frequency_penalty+1, # the scale of TGI is different from OpenAI
+                #         force_timeout=get_settings().config.ai_timeout,
+                #         max_tokens=2000,
+                #         stop=['<|EOT|>'],
+                #     )
+                #     response["choices"][0]["message"]["content"] = response["choices"][0]["message"]["content"].rstrip()
+                #     if response["choices"][0]["message"]["content"].endswith("<|EOT|>"):
+                #         response["choices"][0]["message"]["content"] = response["choices"][0]["message"]["content"][:-7]
+                # --- Ollama ---
+                #Editetd
+                if "ollama" in get_settings().get("config.model"):
+                    litellm.set_verbose = True
+                    model = os.getenv("MODEL", "ollama/qwen2.5-coder:7b")
                     response = await acompletion(
-                        model="huggingface/deepseek-ai/deepseek-coder-33b-instruct",
+                        model=model,
                         messages=[
                             {"role": "system", "content": system},
                             {"role": "user", "content": user},
                         ],
-                        api_base=get_settings().get("config.model"),
                         temperature=temperature,
-                        repetition_penalty=frequency_penalty+1, # the scale of TGI is different from OpenAI
+                        max_tokens=512,
+                        request_timeout=get_settings().config.ai_timeout,
                         force_timeout=get_settings().config.ai_timeout,
-                        max_tokens=2000,
-                        stop=['<|EOT|>'],
+                        stream=False,
                     )
-                    response["choices"][0]["message"]["content"] = response["choices"][0]["message"]["content"].rstrip()
-                    if response["choices"][0]["message"]["content"].endswith("<|EOT|>"):
-                        response["choices"][0]["message"]["content"] = response["choices"][0]["message"]["content"][:-7]
+                # --- vLLM ---
+                elif "vllm" in get_settings().get("config.model").lower():
+                    litellm.set_verbose = True
+
+                    model = os.getenv(
+                        "MODEL",
+                        "openai/deepseek-ai/deepseek-coder-33b-instruct"
+                    )
+
+                    response = await acompletion(
+                        model=model,
+                        messages=[
+                            {"role": "system", "content": system},
+                            {"role": "user", "content": user},
+                        ],
+                        api_base="http://host.docker.internal:8010/v1",
+                        temperature=temperature,
+                        repetition_penalty=frequency_penalty + 1,
+                        max_tokens=2000,
+                        force_timeout=get_settings().config.ai_timeout,
+                        stop=["<|EOT|>"],
+                        stream=False,
+                    )
+
+                    # ---- Post-processing (mirrors HF path) ----
+                    content = response["choices"][0]["message"]["content"].rstrip()
+                    if content.endswith("<|EOT|>"):
+                        content = content[:-7]
+
+                    response["choices"][0]["message"]["content"] = content
                 else:
                     response = await acompletion(
                         model=model,
