@@ -30,7 +30,7 @@ async def acompletion_compat(
     """
 
     # ---------- vLLM ----------
-    if model.startswith("hosted_vllm/") or model.startswith("vllm/"):
+    if model.startswith("openai/") or model.startswith("vllm/"):
         if api_base is None:
             raise ValueError("api_base must be set for vLLM")
 
