@@ -13,8 +13,8 @@ specify path to config file via a environment variable
 - ALPHA_CODIUM_CONFIG_FILE
 - ALPHA_CODIUM_SECRETS_FILE
 ```bash
-export APP_CONFIG_FILE=./config_files/configuration.toml
-export APP_SECRETS_FILE=./config_files/.secrets.toml
+export ALPHA_CODIUM_CONFIG_FILE=./config_files/configuration.toml
+export ALPHA_CODIUM_SECRETS_FILE=./config_files/.secrets.toml
 ```
 ### solve dataset 
 ```python
