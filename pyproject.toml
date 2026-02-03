@@ -44,6 +44,8 @@ dependencies = [
     "pydantic>=2.0",
     # uninstall ipython to catch breakpoints on debug with sandbox==false
 ]
+[tool.setuptools.package-data]
+alpha_codium = ["**/*.toml"]
 
 [tool.setuptools.packages.find]
 where = ["."]
