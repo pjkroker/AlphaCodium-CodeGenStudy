@@ -138,10 +138,10 @@ def solve_problem(dataset_name,
                 logger.info(f"evaluating public solution {index_published} on private tests...")
                 test_results, test_passed_private, test_failed_private, test_timeout_private \
                     = evaluate_solution_on_subset('private_tests', problem, sol_published, silent=True)
+                
                 logger.info(f"evaluating public solution {index_published} on generated tests...")
                 test_results, test_passed_generate, test_failed_generate, test_timeout_generate = (
                     evaluate_solution_on_subset('generated_tests', problem, sol_published, silent=True))
-
                 if (test_failed_private == test_failed_generate == test_timeout_private == test_timeout_generate == 0) \
                         and test_passed_private + test_passed_generate > 0:
                     logger.info(f"sol_published index {index_published} passed all tests:\n{sol_published}")
@@ -153,7 +153,7 @@ def solve_problem(dataset_name,
         except Exception as e:
             logger.error(f"Error evaluating public solutions: {e}")
             pass
-
+        
 
     return solve_my_problem(problem)
 

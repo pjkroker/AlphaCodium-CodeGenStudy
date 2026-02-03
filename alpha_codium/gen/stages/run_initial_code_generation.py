@@ -6,6 +6,10 @@ from alpha_codium.gen.stages.run_initial_solve import run_initial_solve
 from alpha_codium.gen.stages.run_tests import run_tests
 from alpha_codium.log import get_logger
 
+from se_helpers.evaluation.iteration_tracker import IterationTracker
+from se_helpers.evaluation.iteration_tracker.io import write_jsonl
+from pathlib import Path
+
 logger = get_logger(__name__)
 
 
@@ -17,6 +21,17 @@ async def run_initial_code_generation(self, problem):
 
             max_attempts = get_settings().get('initial_code_generation.max_attempts', 5)
             counter = 0
+
+            tracker = IterationTracker(
+                experiment=problem["name"],
+                task_id="",            # or whatever identifier you use
+                attempt_id="",      # must be unique per run
+                max_iterations=max_attempts,
+                metadata={
+                    "stage": "initial_code_generation",
+                    "model": get_settings().get("config.model", "error: could not get model"),           # optional
+                },
+            )
 
             # set the public tests as input
             test_input = problem['public_tests']['input']
@@ -38,6 +53,7 @@ async def run_initial_code_generation(self, problem):
                 best_d = d_tot
 
             while not passed_tests:
+                tracker.step()
                 counter += 1
                 if counter > max_attempts:
                     logger.error(f"Failed to pass tests after {counter - 1} attempts. exiting the stage")
@@ -55,6 +71,7 @@ async def run_initial_code_generation(self, problem):
                     = run_tests(self, problem, counter, test_input, test_output)
 
                 if passed_tests:
+                    tracker.success()
                     logger.info(f"Passed tests after {counter} attempts")
                     break
                 else:
@@ -70,6 +87,7 @@ async def run_initial_code_generation(self, problem):
                 logger.error(f'Reverting to best solution so far, d_tot: {best_d}')
                 problem['code_recent_solution'] = best_solution
 
+            write_jsonl(tracker.record, Path(__file__).parent.parent.parent.parent.parent / "data" / "output" / "results.jsonl")
             return problem
         except Exception as e:
             logging.error(f"'initial code generation' stage, counter_retry {counter_retry}, Error: {e}")
