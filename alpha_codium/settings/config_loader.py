@@ -1,25 +1,32 @@
+import os
 import pathlib
-from os import listdir
-from os.path import abspath, dirname, join, isfile
-import glob
-
+from os.path import abspath, dirname
 from dynaconf import Dynaconf
 
-PR_AGENT_TOML_KEY = "pr-agent"
-
 current_dir = dirname(abspath(__file__))
-# setting_dir = join(current_dir, "settings")
-setting_dir = current_dir
 
+# 1. Package defaults
+package_toml_files = list(
+    pathlib.Path(current_dir).glob("*.toml")
+)
 
+toml_files = package_toml_files.copy()
 
-toml_files = list(pathlib.Path(join(setting_dir)).glob('*.toml')) # includes hidden files
+# 2. External configuration
+config_path = os.getenv("ALPHA_CODIUM_CONFIG_FILE")
+if config_path and pathlib.Path(config_path).exists():
+    toml_files.append(config_path)
+
+# 3. External secrets
+secrets_path = os.getenv("ALPHA_CODIUM_SECRETS_FILE")
+if secrets_path and pathlib.Path(secrets_path).exists():
+    toml_files.append(secrets_path)
+
 global_settings = Dynaconf(
     envvar_prefix=False,
     merge_enabled=True,
     settings_files=toml_files,
 )
-
 
 def get_settings():
     return global_settings

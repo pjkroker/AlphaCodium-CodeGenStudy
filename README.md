@@ -8,6 +8,14 @@ conda activate alpha_codium-study
 pip install -e .
 ```
 ## Usage
+### change settings
+specify path to config file via a environment variable
+- ALPHA_CODIUM_CONFIG_FILE
+- ALPHA_CODIUM_SECRETS_FILE
+```bash
+export APP_CONFIG_FILE=./config_files/configuration.toml
+export APP_SECRETS_FILE=./config_files/.secrets.toml
+```
 ### solve dataset 
 ```python
 from alpha_codium.gen.dataset_solver import solve_dataset
