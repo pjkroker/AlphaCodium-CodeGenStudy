@@ -8,12 +8,12 @@ from alpha_codium.log import get_logger
 
 from se_helpers.evaluation.iteration_tracker import IterationTracker
 from se_helpers.evaluation.iteration_tracker.io import write_jsonl
-from pathlib import Path
+
 
 logger = get_logger(__name__)
 
 
-async def run_initial_code_generation(self, problem):
+async def run_initial_code_generation(self, problem, path_output="."):
     counter_retry = 0
     while True:
         try:
@@ -87,7 +87,7 @@ async def run_initial_code_generation(self, problem):
                 logger.error(f'Reverting to best solution so far, d_tot: {best_d}')
                 problem['code_recent_solution'] = best_solution
 
-            write_jsonl(tracker.record, Path(__file__).parent.parent.parent.parent.parent / "data" / "output" / "results.jsonl")
+            write_jsonl(tracker.record, path_output)
             return problem
         except Exception as e:
             logging.error(f"'initial code generation' stage, counter_retry {counter_retry}, Error: {e}")

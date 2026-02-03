@@ -12,7 +12,8 @@ from alpha_codium.settings.config_loader import get_settings
 
 def solve_dataset(dataset_name='valid_and_test_processed',
                   split_name='valid',
-                  database_solution_path='solution_database.json'):
+                  database_solution_path='solution_database.json',
+                  path_output="."):
 
     # load dataset
     data_provider = CodeContestDataProvider(dataset_location=dataset_name)
@@ -72,7 +73,7 @@ def solve_dataset(dataset_name='valid_and_test_processed',
                 continue
 
             # solve problem
-            solution = solver.solve_problem_in_dataset(problem, iteration, logger)
+            solution = solver.solve_problem_in_dataset(problem, iteration, logger, path_output=path_output)
 
             logger.info(f"solution code:\n{solution}")
             if not solution:

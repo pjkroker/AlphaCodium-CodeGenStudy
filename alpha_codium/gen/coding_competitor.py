@@ -55,7 +55,7 @@ class CodeContestsCompetitor:
         )
         return response, finish_reason
 
-    async def run(self, problem, iteration=0, logger_ext=None):
+    async def run(self, problem, iteration=0, logger_ext=None, path_output="."):
         if logger_ext:
             logger = logger_ext
         else:
@@ -82,7 +82,7 @@ class CodeContestsCompetitor:
                 problem = await run_generate_ai_tests(self, problem)
 
                 # initial code generation
-                problem = await run_initial_code_generation(self, problem)
+                problem = await run_initial_code_generation(self, problem, path_output=path_output)
 
                 # evaluate on public tests
                 problem = await run_evaluate_public_tests(self, problem)
@@ -95,16 +95,17 @@ class CodeContestsCompetitor:
             logging.error(f"Error: {e}")
             return ""
 
-    def solve_problem_in_dataset(self, example, iteration=0, logger_ext=None):
+    def solve_problem_in_dataset(self, example, iteration=0, logger_ext=None, path_output="."):
         problem = {k: example.get(k) for k in ["name", "description", 'public_tests']}
-        prediction = asyncio.run(self.run(problem=problem, iteration=iteration, logger_ext=logger_ext))
+        prediction = asyncio.run(self.run(problem=problem, iteration=iteration, logger_ext=logger_ext, path_output=path_output))
         return prediction
 
 
 def solve_problem(dataset_name,
                   split_name="valid",
                   problem_name="",
-                  problem_number=0):
+                  problem_number=0,
+                  path_output="."):
 
     # load dataset
     logger = get_logger(__name__)
@@ -155,17 +156,17 @@ def solve_problem(dataset_name,
             pass
         
 
-    return solve_my_problem(problem)
+    return solve_my_problem(problem, path_output=path_output)
 
 
-def solve_my_problem(problem):
+def solve_my_problem(problem, path_output="."):
 
     base_path = os.getcwd()
     logger = get_logger(__name__)
 
     solver = CodeContestsCompetitor()
     os.chdir(base_path)
-    solution = solver.solve_problem_in_dataset(problem)
+    solution = solver.solve_problem_in_dataset(problem, path_output=path_output)
     logger.info(f"testing solution on private tests with prediction:\n{solution}")
 
     logger.info(f"evaluating solution on public tests...")

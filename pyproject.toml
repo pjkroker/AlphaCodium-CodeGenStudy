@@ -7,6 +7,7 @@ name = "alpha-codium"
 version = "0.1.0"
 
 dependencies = [
+    "se_helpers @ git+ssh://git@github.com/pjkroker/se_helpers.git@v0.3.0",
     "dynaconf==3.1.12",
     "fastapi",
     "PyGithub==1.59.*",
