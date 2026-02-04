@@ -47,6 +47,9 @@ dependencies = [
 [tool.setuptools.package-data]
 alpha_codium = ["**/*.toml"]
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["alpha_codium*"]
